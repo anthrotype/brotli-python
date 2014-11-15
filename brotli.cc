@@ -5,7 +5,7 @@
 static PyObject *BrotliError;
 
 static int
-mode_convertor(PyObject* o, brotli::BrotliParams::Mode* mode)
+mode_convertor(PyObject *o, brotli::BrotliParams::Mode *mode)
 {
   char *mode_str = PyString_AsString(o);
   if (!mode_str)
@@ -28,7 +28,8 @@ mode_convertor(PyObject* o, brotli::BrotliParams::Mode* mode)
   return 1;
 }
 
-static PyObject * brotli_compress(PyObject * self, PyObject * args)
+static PyObject*
+brotli_compress(PyObject *self, PyObject *args)
 {
   PyObject *ReturnVal = NULL;
   uint8_t *input, *output;
@@ -68,14 +69,15 @@ error:
   return ReturnVal;
 }
 
-static PyObject * brotli_decompress(PyObject * self, PyObject * args)
+static PyObject*
+brotli_decompress(PyObject *self, PyObject *args)
 {
   PyErr_SetString(PyExc_NotImplementedError, "brotli.decompress");
   return NULL;
 }
 
 static PyMethodDef brotli_methods[] = {
-  {"compress", brotli_compress, METH_VARARGS, ""},
+  {"compress",   brotli_compress,   METH_VARARGS, ""},
   {"decompress", brotli_decompress, METH_VARARGS, ""},
   {NULL, NULL, 0, NULL}
 };
@@ -87,7 +89,8 @@ initbrotli(void)
 
   BrotliError = PyErr_NewException((char*) "brotli.error", NULL, NULL);
 
-  if (BrotliError != NULL) {
+  if (BrotliError != NULL)
+  {
     Py_INCREF(BrotliError);
     PyModule_AddObject(m, "error", BrotliError);
   }
