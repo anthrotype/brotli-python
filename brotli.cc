@@ -4,7 +4,7 @@
 
 static PyObject *BrotliError;
 
-static PyObject * encode_compress(PyObject * self, PyObject * args)
+static PyObject * brotli_compress(PyObject * self, PyObject * args)
 {
   PyObject *ReturnVal = NULL;
   uint8_t *input, *output;
@@ -40,15 +40,15 @@ error:
   return ReturnVal;
 }
 
-static PyMethodDef encode_methods[] = {
-  {"compress", encode_compress, METH_VARARGS, ""},
+static PyMethodDef brotli_methods[] = {
+  {"compress", brotli_compress, METH_VARARGS, ""},
   {NULL, NULL, 0, NULL}
 };
 
 PyMODINIT_FUNC
-initencode(void)
+initbrotli(void)
 {
-  PyObject *m = Py_InitModule("encode", encode_methods);
+  PyObject *m = Py_InitModule("brotli", brotli_methods);
 
   BrotliError = PyErr_NewException((char*) "brotli.error", NULL, NULL);
 
