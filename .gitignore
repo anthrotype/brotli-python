@@ -1,2 +1,4 @@
 .*.sw[nop]
 /build
+/Brotli.egg-info/
+/brotli.so
