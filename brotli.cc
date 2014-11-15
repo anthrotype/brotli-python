@@ -40,8 +40,15 @@ error:
   return ReturnVal;
 }
 
+static PyObject * brotli_decompress(PyObject * self, PyObject * args)
+{
+  PyErr_SetString(PyExc_NotImplementedError, "brotli.decompress");
+  return NULL;
+}
+
 static PyMethodDef brotli_methods[] = {
   {"compress", brotli_compress, METH_VARARGS, ""},
+  {"decompress", brotli_decompress, METH_VARARGS, ""},
   {NULL, NULL, 0, NULL}
 };
 
