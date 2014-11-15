@@ -44,7 +44,7 @@ brotli_compress(PyObject *self, PyObject *args)
                         &PyBool_Type, &transform))
     return NULL;
 
-  size_t output_length = length * 2;
+  size_t output_length = 1.2 * length + 10240;
   output = new uint8_t[output_length];
 
   brotli::BrotliParams params;
