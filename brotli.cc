@@ -9,7 +9,7 @@ mode_convertor(PyObject *o, brotli::BrotliParams::Mode *mode)
 {
   char *mode_str = PyString_AsString(o);
   if (!mode_str)
-    return NULL;
+    return 0;
 
   if (strcmp(mode_str, "text") == 0)
     {
@@ -22,7 +22,7 @@ mode_convertor(PyObject *o, brotli::BrotliParams::Mode *mode)
   else
     {
       PyErr_SetString(PyExc_TypeError, "mode is either 'text' or 'font'");
-      return NULL;
+      return 0;
     }
 
   return 1;
