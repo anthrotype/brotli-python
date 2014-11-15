@@ -1,4 +1,2 @@
 .*.sw[nop]
-/brotli/decode.c
-/brotli/encode.cpp
 /build
