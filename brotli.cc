@@ -4,15 +4,43 @@
 
 static PyObject *BrotliError;
 
+static int
+mode_convertor(PyObject* o, brotli::BrotliParams::Mode* mode)
+{
+  char *mode_str = PyString_AsString(o);
+  if (!mode_str)
+    return NULL;
+
+  if (strcmp(mode_str, "text") == 0)
+    {
+      *mode = brotli::BrotliParams::Mode::MODE_TEXT;
+    }
+  else if (strcmp(mode_str, "font") == 0)
+    {
+      *mode = brotli::BrotliParams::Mode::MODE_FONT;
+    }
+  else
+    {
+      PyErr_SetString(PyExc_TypeError, "mode is either 'text' or 'font'");
+      return NULL;
+    }
+
+  return 1;
+}
+
 static PyObject * brotli_compress(PyObject * self, PyObject * args)
 {
   PyObject *ReturnVal = NULL;
   uint8_t *input, *output;
   size_t length;
-  int mode = -1;
+  brotli::BrotliParams::Mode mode = (brotli::BrotliParams::Mode) -1;
   PyObject* transform = NULL;
 
-  if (!PyArg_ParseTuple(args, "s#|iO!:compress", &input, &length, &mode, &PyBool_Type, &transform))
+  if (!PyArg_ParseTuple(args,
+                        "s#|O&O!:compress",
+                        &input, &length,
+                        &mode_convertor, &mode,
+                        &PyBool_Type, &transform))
     return NULL;
 
   size_t output_length = length * 2;
@@ -20,7 +48,7 @@ static PyObject * brotli_compress(PyObject * self, PyObject * args)
 
   brotli::BrotliParams params;
   if (mode != -1)
-    params.mode = (brotli::BrotliParams::Mode) mode;
+    params.mode = mode;
   if (transform)
     params.enable_transforms = PyObject_IsTrue(transform);
 
