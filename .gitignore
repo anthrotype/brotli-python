@@ -1,6 +1,4 @@
 .*.sw[nop]
-/brotli/decode.py
-/brotli/decode_wrap.cpp
-/brotli/encode.py
-/brotli/encode_wrap.cpp
+/brotli/decode.c
+/brotli/encode.cpp
 /build
