@@ -28,6 +28,13 @@ mode_convertor(PyObject *o, brotli::BrotliParams::Mode *mode)
   return 1;
 }
 
+PyDoc_STRVAR(compress__doc__,
+"compress(string[, mode[, transform]]) -- Returned compressed string.\n"
+"\n"
+"Optional arg mode is the compression mode, either \"text\" (default) or\n"
+"\"font\". Optional boolean arg transform controls whether to enable encoder\n"
+"transforms or not, defaults to False.");
+
 static PyObject*
 brotli_compress(PyObject *self, PyObject *args)
 {
@@ -77,15 +84,22 @@ brotli_decompress(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef brotli_methods[] = {
-  {"compress",   brotli_compress,   METH_VARARGS, ""},
+  {"compress",   brotli_compress,   METH_VARARGS, compress__doc__},
   {"decompress", brotli_decompress, METH_VARARGS, ""},
   {NULL, NULL, 0, NULL}
 };
 
+PyDoc_STRVAR(brotli_documentation,
+"The functions in this module allow compression and decompression using the\n"
+"Brotli library.\n"
+"\n"
+"compress(string[, mode, transform]) -- Compress string.\n"
+"decompress(...) -- Decompresses a compressed string.\n");
+
 PyMODINIT_FUNC
 initbrotli(void)
 {
-  PyObject *m = Py_InitModule("brotli", brotli_methods);
+  PyObject *m = Py_InitModule3("brotli", brotli_methods, brotli_documentation);
 
   BrotliError = PyErr_NewException((char*) "brotli.error", NULL, NULL);
 
