@@ -1,5 +1,6 @@
 from distutils.core import setup, Extension
 from distutils.command.build_ext import build_ext
+import platform
 
 class BuildExt(build_ext):
     def get_source_files(self):
@@ -7,6 +8,56 @@ class BuildExt(build_ext):
         for ext in self.extensions:
             filenames.extend(ext.depends)
         return filenames
+
+    def build_extension(self, ext):
+        c_sources = []
+        cxx_sources = []
+        for source in ext.sources:
+            if source.endswith(".c"):
+                c_sources.append(source)
+            else:
+                cxx_sources.append(source)
+        extra_args = ext.extra_compile_args or []
+
+        objects = []
+        for lang, sources in (("c", c_sources), ("c++", cxx_sources)):
+            if lang == "c++":
+                extra_args.append("-std=c++0x")
+
+            macros = ext.define_macros[:]
+            if platform.system() == "Darwin":
+                macros.append(("OS_MACOSX", "1"))
+            for undef in ext.undef_macros:
+                macros.append((undef,))
+
+            objs = self.compiler.compile(sources,
+                                         output_dir=self.build_temp,
+                                         macros=macros,
+                                         include_dirs=ext.include_dirs,
+                                         debug=self.debug,
+                                         extra_postargs=extra_args,
+                                         depends=ext.depends)
+            objects.extend(objs)
+
+        self._built_objects = objects[:]
+        if ext.extra_objects:
+            objects.extend(ext.extra_objects)
+        extra_args = ext.extra_link_args or []
+
+        ext_path = self.get_ext_fullpath(ext.name)
+        # Detect target language, if not provided
+        language = ext.language or self.compiler.detect_language(sources)
+
+        self.compiler.link_shared_object(
+            objects, ext_path,
+            libraries=self.get_libraries(ext),
+            library_dirs=ext.library_dirs,
+            runtime_library_dirs=ext.runtime_library_dirs,
+            extra_postargs=extra_args,
+            export_symbols=self.get_export_symbols(ext),
+            debug=self.debug,
+            build_temp=self.build_temp,
+            target_lang=language)
 
 brotli = Extension("brotli",
                     sources=[
@@ -58,7 +109,7 @@ brotli = Extension("brotli",
                         "brotli/dec/types.h",
                     ],
                     language="c++",
-                    extra_compile_args=["-std=c++0x"])
+                    )
 
 setup(
     name="Brotli",
