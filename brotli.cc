@@ -1,6 +1,7 @@
 #define PY_SSIZE_T_CLEAN 1
 #include <Python.h>
 #include "brotli/enc/encode.h"
+#include "brotli/dec/decode.h"
 
 static PyObject *BrotliError;
 
@@ -76,16 +77,48 @@ error:
   return ReturnVal;
 }
 
+PyDoc_STRVAR(decompress__doc__,
+"decompress(string[, bufsize]) -- Return decompressed string."
+"\n"
+"Optional arg bufsize is the initial output buffer size.");
+
 static PyObject*
 brotli_decompress(PyObject *self, PyObject *args)
 {
-  PyErr_SetString(PyExc_NotImplementedError, "brotli.decompress");
-  return NULL;
+  PyObject *ReturnVal = NULL;
+  uint8_t *input, *output;
+  size_t length;
+  size_t output_length = 0;
+  if (!PyArg_ParseTuple(args, "s#|n:decompress", &input, &length, &output_length))
+    return NULL;
+
+  if (output_length <= 0)
+    {
+      // Just an arbitrary value, should be big enough
+      output_length = 4 * length;
+    }
+
+  output = new uint8_t[output_length];
+
+  if (BrotliDecompressBuffer(length, input, &output_length, output))
+    {
+      ReturnVal = PyString_FromStringAndSize((char*)output, output_length);
+    }
+  else
+    {
+      PyErr_SetString(BrotliError, "BrotliDecompressBuffer failed");
+      goto error;
+    }
+
+error:
+  delete[] output;
+
+  return ReturnVal;
 }
 
 static PyMethodDef brotli_methods[] = {
   {"compress",   brotli_compress,   METH_VARARGS, compress__doc__},
-  {"decompress", brotli_decompress, METH_VARARGS, ""},
+  {"decompress", brotli_decompress, METH_VARARGS, decompress__doc__},
   {NULL, NULL, 0, NULL}
 };
 
@@ -94,7 +127,7 @@ PyDoc_STRVAR(brotli_documentation,
 "Brotli library.\n"
 "\n"
 "compress(string[, mode, transform]) -- Compress string.\n"
-"decompress(...) -- Decompresses a compressed string.\n");
+"decompress(string) -- Decompresses a compressed string.\n");
 
 PyMODINIT_FUNC
 initbrotli(void)
