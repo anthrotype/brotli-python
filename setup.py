@@ -117,6 +117,8 @@ setup(
     url="https://github.com/khaledhosny/brotli-python",
     description="Python binding of the Brotli compression library",
     author="Khaled Hosny",
+    author_email="khaledhosny@eglug.org",
+    license="Apache 2.0",
     ext_modules=[brotli],
     cmdclass={'build_ext': BuildExt},
 )
