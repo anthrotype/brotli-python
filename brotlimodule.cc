@@ -1,7 +1,13 @@
 #define PY_SSIZE_T_CLEAN 1
 #include <Python.h>
+#include <bytesobject.h>
 #include "brotli/enc/encode.h"
 #include "brotli/dec/decode.h"
+
+#if PY_MAJOR_VERSION >= 3
+#define PyInt_Check PyLong_Check
+#define PyInt_AsLong PyLong_AsLong
+#endif
 
 static PyObject *BrotliError;
 
@@ -58,7 +64,7 @@ brotli_compress(PyObject *self, PyObject *args)
 
   if (brotli::BrotliCompressBuffer(params, length, input, &output_length, output))
     {
-      ReturnVal = PyString_FromStringAndSize((char*)output, output_length);
+      ReturnVal = PyBytes_FromStringAndSize((char*)output, output_length);
     }
   else
     {
@@ -97,7 +103,7 @@ brotli_decompress(PyObject *self, PyObject *args)
 
   if (BrotliDecompressBuffer(length, input, &output_length, output))
     {
-      ReturnVal = PyString_FromStringAndSize((char*)output, output_length);
+      ReturnVal = PyBytes_FromStringAndSize((char*)output, output_length);
     }
   else
     {
@@ -124,10 +130,31 @@ PyDoc_STRVAR(brotli_documentation,
 "compress(string[, mode, transform]) -- Compress string.\n"
 "decompress(string) -- Decompresses a compressed string.\n");
 
+#if PY_MAJOR_VERSION >= 3
+#define INIT_BROTLI   PyInit_brotli
+#define CREATE_BROTLI PyModule_Create(&brotli_module)
+#define RETURN_BROTLI return m
+
+static struct PyModuleDef brotli_module = {
+  PyModuleDef_HEAD_INIT,
+  "brotli",
+  brotli_documentation,
+  0,
+  brotli_methods,
+  NULL,
+  NULL,
+  NULL
+};
+#else
+#define INIT_BROTLI   initbrotli
+#define CREATE_BROTLI Py_InitModule3("brotli", brotli_methods, brotli_documentation)
+#define RETURN_BROTLI return
+#endif
+
 PyMODINIT_FUNC
-initbrotli(void)
+INIT_BROTLI(void)
 {
-  PyObject *m = Py_InitModule3("brotli", brotli_methods, brotli_documentation);
+  PyObject *m = CREATE_BROTLI;
 
   BrotliError = PyErr_NewException((char*) "brotli.error", NULL, NULL);
 
@@ -139,4 +166,6 @@ initbrotli(void)
 
   PyModule_AddIntConstant(m, "MODE_TEXT", (int) brotli::BrotliParams::Mode::MODE_TEXT);
   PyModule_AddIntConstant(m, "MODE_FONT", (int) brotli::BrotliParams::Mode::MODE_FONT);
+
+  RETURN_BROTLI;
 }
