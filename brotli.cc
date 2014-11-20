@@ -8,21 +8,16 @@ static PyObject *BrotliError;
 static int
 mode_convertor(PyObject *o, brotli::BrotliParams::Mode *mode)
 {
-  char *mode_str = PyString_AsString(o);
-  if (!mode_str)
-    return 0;
+  if (!PyInt_Check(o))
+    {
+      PyErr_SetString(BrotliError, "Invalid mode");
+      return 0;
+    }
 
-  if (strcmp(mode_str, "text") == 0)
+  *mode = (brotli::BrotliParams::Mode) PyInt_AsLong(o);
+  if (*mode != brotli::BrotliParams::Mode::MODE_TEXT && *mode != brotli::BrotliParams::Mode::MODE_FONT)
     {
-      *mode = brotli::BrotliParams::Mode::MODE_TEXT;
-    }
-  else if (strcmp(mode_str, "font") == 0)
-    {
-      *mode = brotli::BrotliParams::Mode::MODE_FONT;
-    }
-  else
-    {
-      PyErr_SetString(PyExc_TypeError, "mode is either 'text' or 'font'");
+      PyErr_SetString(BrotliError, "Invalid mode");
       return 0;
     }
 
@@ -32,9 +27,9 @@ mode_convertor(PyObject *o, brotli::BrotliParams::Mode *mode)
 PyDoc_STRVAR(compress__doc__,
 "compress(string[, mode[, transform]]) -- Returned compressed string.\n"
 "\n"
-"Optional arg mode is the compression mode, either \"text\" (default) or\n"
-"\"font\". Optional boolean arg transform controls whether to enable encoder\n"
-"transforms or not, defaults to False.");
+"Optional arg mode is the compression mode, either MODE_TEXT (default) or\n"
+"MODE_FONT. Optional boolean arg transform controls whether to enable\n"
+"encoder transforms or not, defaults to False.");
 
 static PyObject*
 brotli_compress(PyObject *self, PyObject *args)
@@ -141,4 +136,7 @@ initbrotli(void)
     Py_INCREF(BrotliError);
     PyModule_AddObject(m, "error", BrotliError);
   }
+
+  PyModule_AddIntConstant(m, "MODE_TEXT", (int) brotli::BrotliParams::Mode::MODE_TEXT);
+  PyModule_AddIntConstant(m, "MODE_FONT", (int) brotli::BrotliParams::Mode::MODE_FONT);
 }
