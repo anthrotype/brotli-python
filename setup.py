@@ -61,7 +61,7 @@ class BuildExt(build_ext):
 
 brotli = Extension("brotli",
                     sources=[
-                        "brotli.cc",
+                        "brotlimodule.cc",
                         "brotli/enc/backward_references.cc",
                         "brotli/enc/block_splitter.cc",
                         "brotli/enc/brotli_bit_stream.cc",
