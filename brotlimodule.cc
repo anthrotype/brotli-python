@@ -9,23 +9,22 @@
 #define PyInt_AsLong PyLong_AsLong
 #endif
 
+using namespace brotli;
+
 static PyObject *BrotliError;
 
-static int
-mode_convertor(PyObject *o, brotli::BrotliParams::Mode *mode)
-{
-  if (!PyInt_Check(o))
-    {
-      PyErr_SetString(BrotliError, "Invalid mode");
-      return 0;
-    }
+static int mode_convertor(PyObject *o, BrotliParams::Mode *mode) {
+  if (!PyInt_Check(o)) {
+    PyErr_SetString(BrotliError, "Invalid mode");
+    return 0;
+  }
 
-  *mode = (brotli::BrotliParams::Mode) PyInt_AsLong(o);
-  if (*mode != brotli::BrotliParams::Mode::MODE_TEXT && *mode != brotli::BrotliParams::Mode::MODE_FONT)
-    {
-      PyErr_SetString(BrotliError, "Invalid mode");
-      return 0;
-    }
+  *mode = (BrotliParams::Mode) PyInt_AsLong(o);
+  if (*mode != BrotliParams::Mode::MODE_TEXT &&
+      *mode != BrotliParams::Mode::MODE_FONT) {
+    PyErr_SetString(BrotliError, "Invalid mode");
+    return 0;
+  }
 
   return 1;
 }
@@ -37,45 +36,42 @@ PyDoc_STRVAR(compress__doc__,
 "MODE_FONT. Optional boolean arg transform controls whether to enable\n"
 "encoder transforms or not, defaults to False.");
 
-static PyObject*
-brotli_compress(PyObject *self, PyObject *args)
-{
-  PyObject *ReturnVal = NULL;
-  uint8_t *input, *output;
-  size_t length;
-  brotli::BrotliParams::Mode mode = (brotli::BrotliParams::Mode) -1;
+static PyObject* brotli_compress(PyObject *self, PyObject *args) {
+  PyObject *ret = NULL;
   PyObject* transform = NULL;
+  uint8_t *input, *output;
+  size_t length, output_length;
+  BrotliParams::Mode mode = (BrotliParams::Mode) -1;
+  int ok;
 
-  if (!PyArg_ParseTuple(args,
-                        "s#|O&O!:compress",
+  ok = PyArg_ParseTuple(args, "s#|O&O!:compress",
                         &input, &length,
                         &mode_convertor, &mode,
-                        &PyBool_Type, &transform))
+                        &PyBool_Type, &transform);
+
+  if (!ok)
     return NULL;
 
-  size_t output_length = 1.2 * length + 10240;
+  output_length = 1.2 * length + 10240;
   output = new uint8_t[output_length];
 
-  brotli::BrotliParams params;
+  BrotliParams params;
   if (mode != -1)
     params.mode = mode;
   if (transform)
     params.enable_transforms = PyObject_IsTrue(transform);
 
-  if (brotli::BrotliCompressBuffer(params, length, input, &output_length, output))
-    {
-      ReturnVal = PyBytes_FromStringAndSize((char*)output, output_length);
-    }
-  else
-    {
-      PyErr_SetString(BrotliError, "BrotliCompressBuffer failed");
-      goto error;
-    }
+  ok = BrotliCompressBuffer(params, length, input,
+                                    &output_length, output);
+  if (ok) {
+    ret = PyBytes_FromStringAndSize((char*)output, output_length);
+  } else {
+    PyErr_SetString(BrotliError, "BrotliCompressBuffer failed");
+  }
 
-error:
   delete[] output;
 
-  return ReturnVal;
+  return ret;
 }
 
 PyDoc_STRVAR(decompress__doc__,
@@ -83,38 +79,34 @@ PyDoc_STRVAR(decompress__doc__,
 "\n"
 "Optional arg bufsize is the initial output buffer size.");
 
-static PyObject*
-brotli_decompress(PyObject *self, PyObject *args)
-{
-  PyObject *ReturnVal = NULL;
+static PyObject* brotli_decompress(PyObject *self, PyObject *args) {
+  PyObject *ret = NULL;
   uint8_t *input, *output;
-  size_t length;
-  size_t output_length = 0;
-  if (!PyArg_ParseTuple(args, "s#|n:decompress", &input, &length, &output_length))
+  size_t length, output_length = 0;
+  int ok;
+
+  ok = PyArg_ParseTuple(args, "s#|n:decompress",
+                        &input, &length, &output_length);
+  if (!ok)
     return NULL;
 
-  if (output_length <= 0)
-    {
-      // Just an arbitrary value, should be big enough
-      output_length = 4 * length;
-    }
+  if (output_length <= 0) {
+    // Just an arbitrary value, should be big enough
+    output_length = 4 * length;
+  }
 
   output = new uint8_t[output_length];
 
-  if (BrotliDecompressBuffer(length, input, &output_length, output))
-    {
-      ReturnVal = PyBytes_FromStringAndSize((char*)output, output_length);
-    }
-  else
-    {
-      PyErr_SetString(BrotliError, "BrotliDecompressBuffer failed");
-      goto error;
-    }
+  ok = BrotliDecompressBuffer(length, input, &output_length, output);
+  if (ok) {
+    ret = PyBytes_FromStringAndSize((char*)output, output_length);
+  } else {
+    PyErr_SetString(BrotliError, "BrotliDecompressBuffer failed");
+  }
 
-error:
   delete[] output;
 
-  return ReturnVal;
+  return ret;
 }
 
 static PyMethodDef brotli_methods[] = {
@@ -123,7 +115,7 @@ static PyMethodDef brotli_methods[] = {
   {NULL, NULL, 0, NULL}
 };
 
-PyDoc_STRVAR(brotli_documentation,
+PyDoc_STRVAR(brotli__doc__,
 "The functions in this module allow compression and decompression using the\n"
 "Brotli library.\n"
 "\n"
@@ -138,7 +130,7 @@ PyDoc_STRVAR(brotli_documentation,
 static struct PyModuleDef brotli_module = {
   PyModuleDef_HEAD_INIT,
   "brotli",
-  brotli_documentation,
+  brotli__doc__,
   0,
   brotli_methods,
   NULL,
@@ -147,25 +139,22 @@ static struct PyModuleDef brotli_module = {
 };
 #else
 #define INIT_BROTLI   initbrotli
-#define CREATE_BROTLI Py_InitModule3("brotli", brotli_methods, brotli_documentation)
+#define CREATE_BROTLI Py_InitModule3("brotli", brotli_methods, brotli__doc__)
 #define RETURN_BROTLI return
 #endif
 
-PyMODINIT_FUNC
-INIT_BROTLI(void)
-{
+PyMODINIT_FUNC INIT_BROTLI(void) {
   PyObject *m = CREATE_BROTLI;
 
   BrotliError = PyErr_NewException((char*) "brotli.error", NULL, NULL);
 
-  if (BrotliError != NULL)
-  {
+  if (BrotliError != NULL) {
     Py_INCREF(BrotliError);
     PyModule_AddObject(m, "error", BrotliError);
   }
 
-  PyModule_AddIntConstant(m, "MODE_TEXT", (int) brotli::BrotliParams::Mode::MODE_TEXT);
-  PyModule_AddIntConstant(m, "MODE_FONT", (int) brotli::BrotliParams::Mode::MODE_FONT);
+  PyModule_AddIntConstant(m, "MODE_TEXT", (int) BrotliParams::Mode::MODE_TEXT);
+  PyModule_AddIntConstant(m, "MODE_FONT", (int) BrotliParams::Mode::MODE_FONT);
 
   RETURN_BROTLI;
 }
